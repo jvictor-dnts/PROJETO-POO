@@ -1,12 +1,12 @@
 import pygame
 import sys
 
-
+# --------- Configurações ---------
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 FPS = 60
 
-
+# Cores
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 HIGHLIGHT = (70, 130, 180)
@@ -14,11 +14,18 @@ HIGHLIGHT = (70, 130, 180)
 pygame.init()
 pygame.display.set_caption("Menu Inicial - DataMaze Escape")
 FONT = pygame.font.Font("JOGO/fonte/fontehacker.ttf", 26)
-text_surface = FONT.render("DataMaze Escape", True, (0, 255, 0))  # Verde neon, estilo hacker
 
-# Posição para centralizar
-text_rect = text_surface.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
 
+# >>> ADICIONADO: fonte maior para o título
+TITLE_FONT = pygame.font.Font("JOGO/fonte/fontehacker.ttf", 32)
+
+
+# >>> ADICIONADO: inicializa o mixer para som
+pygame.mixer.init()
+
+# >>> ADICIONADO: carrega a música estilo hacker
+pygame.mixer.music.load("JOGO/musica_hacker.mp3")  # coloque o arquivo na pasta do projeto
+pygame.mixer.music.play(-1)  # -1 = toca em loop infinito
 
 
 class Button:
@@ -61,14 +68,20 @@ class Menu:
         ]
         self.running = True
 
+        # >>> ADICIONADO: cria o texto do título para exibir na tela
+        self.title_surface = TITLE_FONT.render("DataMaze Escape", True, (0, 255, 0))  # Verde neon
+        self.title_rect = self.title_surface.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//4))
+
     def start_game(self):
         print("Iniciando o jogo...")
         self.running = False
+        pygame.mixer.music.stop()  # >>> ADICIONADO: para a música ao iniciar o jogo
 
     def show_options(self):
         print("Abrindo opções...")
 
     def exit_game(self):
+        pygame.mixer.music.stop()  # >>> ADICIONADO: para a música antes de sair
         pygame.quit()
         sys.exit()
 
@@ -85,6 +98,9 @@ class Menu:
 
             # Exibe o background
             self.screen.blit(self.background, (0, 0))
+
+            # >>> ADICIONADO: desenha o título na tela
+            self.screen.blit(self.title_surface, self.title_rect)
 
             # Desenha os botões
             for btn in self.buttons:
