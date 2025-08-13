@@ -54,7 +54,7 @@ class Menu:
         self.screen = screen
 
         # Carrega o background e ajusta o tamanho
-        self.background = pygame.image.load("asset/imagem/F.png").convert()
+        self.background = pygame.image.load("asset/imagen/F.png").convert()
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
         
         mid_x = SCREEN_WIDTH // 2
