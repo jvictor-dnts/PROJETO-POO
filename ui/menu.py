@@ -13,18 +13,18 @@ HIGHLIGHT = (70, 130, 180)
 
 pygame.init()
 pygame.display.set_caption("Menu Inicial - DataMaze Escape")
-FONT = pygame.font.Font("asset/fonte/fontehacker.ttf", 26)
+FONT = pygame.font.Font("fontehacker.ttf", 26)
 
 
 # >>> ADICIONADO: fonte maior para o título
-TITLE_FONT = pygame.font.Font("asset/fonte/fontehacker.ttf", 32)
+TITLE_FONT = pygame.font.Font("fontehacker.ttf", 32)
 
 
 # >>> ADICIONADO: inicializa o mixer para som
 pygame.mixer.init()
 
 # >>> ADICIONADO: carrega a música estilo hacker
-pygame.mixer.music.load("asset/muscia/musica_hacker.mp3")  # coloque o arquivo na pasta do projeto
+pygame.mixer.music.load("musica_hacker.mp3")  # coloque o arquivo na pasta do projeto
 pygame.mixer.music.play(-1)  # -1 = toca em loop infinito
 
 
@@ -54,7 +54,7 @@ class Menu:
         self.screen = screen
 
         # Carrega o background e ajusta o tamanho
-        self.background = pygame.image.load("asset/imagen/F.png").convert()
+        self.background = pygame.image.load("F.png").convert()
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
         
         mid_x = SCREEN_WIDTH // 2
