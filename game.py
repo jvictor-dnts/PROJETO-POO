@@ -11,11 +11,11 @@ class Jogo:
         self.relogio = pygame.time.Clock()
         self.fonte = pygame.font.SysFont('consolas', 24)
         
-        # Elementos do jogo
+        #elementos do jogo
         self.labirinto = Labirinto()
         self.jogador = Jogador()
         
-        # Estado do jogo
+        #estado do jogo
         self.rodando = True
         self.jogo_ativo = True
         self.tempo_inicio = pygame.time.get_ticks()
@@ -25,7 +25,7 @@ class Jogo:
             if evento.type == pygame.QUIT:
                 self.rodando = False
             
-            # Controles do jogador
+            #controles do jogador
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_UP:
                     self.jogador.proxima_direcao = [0, -1]
@@ -44,7 +44,7 @@ class Jogo:
             
         self.jogador.atualizar(self.labirinto)
         
-        # Verificar coleta de itens
+        #verificar coleta de itens
         celula_x = int(self.jogador.x // TAMANHO_CELULA)
         celula_y = int(self.jogador.y // TAMANHO_CELULA)
         item = self.labirinto.pegar_item(celula_x, celula_y)
@@ -62,28 +62,28 @@ class Jogo:
     def desenhar(self):
         self.tela.fill(PRETO)
         
-        # Desenhar labirinto
+        #desenhar labirinto
         self.labirinto.desenhar(self.tela)
         
-        # Desenhar jogador
+        #desenhar jogador
         self.jogador.desenhar(self.tela)
         
-        # Desenhar HUD
+        #desenhar HUD
         self.desenhar_hud()
         
         pygame.display.flip()
     
     def desenhar_hud(self):
-        """Desenha a interface do usuário"""
-        # Pontuação
+        """desenha a interface do usuário"""
+        #pontuação
         texto_pontos = self.fonte.render(f"Pontos: {self.jogador.pontos}", True, BRANCO)
         self.tela.blit(texto_pontos, (20, 20))
         
-        # Vidas
+        #vidas
         texto_vidas = self.fonte.render(f"Vidas: {self.jogador.vidas}", True, BRANCO)
         self.tela.blit(texto_vidas, (20, 50))
         
-        # Tempo
+        #tempo
         tempo_decorrido = (pygame.time.get_ticks() - self.tempo_inicio) // 1000
         texto_tempo = self.fonte.render(f"Tempo: {tempo_decorrido}s", True, BRANCO)
         self.tela.blit(texto_tempo, (20, 80))

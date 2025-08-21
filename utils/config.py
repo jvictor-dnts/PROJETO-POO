@@ -1,4 +1,4 @@
-# Cores
+#cores
 PRETO = (0, 0, 0)
 AZUL_ESCURO = (0, 20, 40)
 AZUL_NEON = (0, 200, 255)
@@ -7,23 +7,23 @@ AMARELO = (255, 255, 0)
 VERDE = (0, 255, 100)
 VERMELHO = (255, 50, 50)
 
-# Configurações do jogo
+#Confing do jogo
 TAMANHO_CELULA = 30
-LARGURA_TELA = 840  # 28 células * 30
-ALTURA_TELA = 930   # 31 células * 30
+SCREEN_WIDTH = 840 #28 células * 30
+SCREEN_HEIGHT = 930 #31 células * 30
 FPS = 60
 
-# Jogador
+#jogador
 VELOCIDADE_JOGADOR = 5
 TAMANHO_JOGADOR = 32  # Agora corresponde ao tamanho do sprite
 
-# Itens
+#itens
 TAMANHO_PONTO = 3
 TAMANHO_POWERUP = 8
 PONTOS_POR_PONTO = 10
 PONTOS_POR_POWERUP = 50
 
-# Sprite
+#sprite
 LARGURA_SPRITE = 32
 ALTURA_SPRITE = 32
 VELOCIDADE_ANIMACAO = 8

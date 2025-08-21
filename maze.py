@@ -48,11 +48,11 @@ class Labirinto:
             for x in range(self.largura):
                 char = labirinto[y][x]
                 if char == '#':
-                    grade[y][x] = 1  # Parede
+                    grade[y][x] = 1 #parede
                 elif char == '.':
-                    grade[y][x] = 2  # Ponto
+                    grade[y][x] = 2 #ponto
                 elif char == 'o':
-                    grade[y][x] = 3  # Power-up
+                    grade[y][x] = 3 #power-up
         return grade
     
     def desenhar(self, tela):
