@@ -1,31 +1,32 @@
 import pygame
 import sys
+from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 
-# --------- Configurações ---------
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-FPS = 60
-
-# Cores
+# Cores do menu
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 HIGHLIGHT = (70, 130, 180)
 
 pygame.init()
-pygame.display.set_caption("Menu Inicial - DataMaze Escape")
+
+# Define ícone e nome da janela
+try:
+    icon = pygame.image.load("F.png")
+    pygame.display.set_icon(icon)
+except Exception:
+    pass
+pygame.display.set_caption("DataMaze Escape")
+
+# Cria a janela principal do menu
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
 FONT = pygame.font.Font("fontehacker.ttf", 26)
-
-
-# >>> ADICIONADO: fonte maior para o título
 TITLE_FONT = pygame.font.Font("fontehacker.ttf", 32)
 
-
-# >>> ADICIONADO: inicializa o mixer para som
+# Inicializa o mixer para som
 pygame.mixer.init()
-
-# >>> ADICIONADO: carrega a música estilo hacker
-pygame.mixer.music.load("musica_hacker.mp3")  # coloque o arquivo na pasta do projeto
-pygame.mixer.music.play(-1)  # -1 = toca em loop infinito
+pygame.mixer.music.load("musica_hacker.mp3")
+pygame.mixer.music.play(-1)
 
 
 class Button:
@@ -50,13 +51,14 @@ class Button:
 
 
 class Menu:
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, tela=None):
+        # Usa a tela global criada para garantir que a janela seja exibida corretamente
+        self.screen = screen if tela is None else tela
 
         # Carrega o background e ajusta o tamanho
         self.background = pygame.image.load("F.png").convert()
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        
+
         mid_x = SCREEN_WIDTH // 2
         start_y = SCREEN_HEIGHT // 2 - 50
         gap = 70
@@ -68,8 +70,7 @@ class Menu:
         ]
         self.running = True
 
-        # >>> ADICIONADO: cria o texto do título para exibir na tela
-        self.title_surface = TITLE_FONT.render("DataMaze Escape", True, (255, 255, 255))  # Verde neon
+        self.title_surface = TITLE_FONT.render("DataMaze Escape", True, (255, 255, 255))
         self.title_rect = self.title_surface.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//4))
 
     def start_game(self):
@@ -128,10 +129,6 @@ class Game:
                     running = False
 
             self.screen.fill((30, 30, 30))
-            # Aqui seria o jogo principal
-            pygame.display.flip()
-            clock.tick(FPS)
-        pygame.quit()
 
 
 if __name__ == "__main__":
