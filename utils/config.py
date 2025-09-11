@@ -8,9 +8,9 @@ VERDE = (0, 255, 100)
 VERMELHO = (255, 50, 50)
 
 #Confing do jogo
-TAMANHO_CELULA = 30
-SCREEN_WIDTH = 840 #28 células * 30
-SCREEN_HEIGHT = 930 #31 células * 30
+TAMANHO_CELULA = 40
+SCREEN_WIDTH = 1120 #28 células * 40
+SCREEN_HEIGHT = 1240 #31 células * 40
 FPS = 60
 
 #jogador
