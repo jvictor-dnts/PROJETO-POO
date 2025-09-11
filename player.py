@@ -23,6 +23,7 @@ class Jogador:
         self.frame_atual = 0
         self.contador_animacao = 0
         self.estado = "baixo"
+        self.rect = pygame.Rect(self.x - LARGURA_SPRITE // 2, self.y - ALTURA_SPRITE // 2, LARGURA_SPRITE, ALTURA_SPRITE)
     
     def carregar_animacoes(self):
         """Divide a sprite sheet em animações"""
@@ -99,6 +100,9 @@ class Jogador:
             self.estado = "direita"
         elif self.direcao[0] < 0:
             self.estado = "esquerda"
+
+        # Atualizar o rect para detecção de colisão
+        self.rect.center = (self.x, self.y)
     
     def tentar_mudar_direcao(self, labirinto):
         """Tenta mudar para a próxima direção solicitada"""
