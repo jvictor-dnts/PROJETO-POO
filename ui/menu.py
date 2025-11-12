@@ -1,8 +1,7 @@
+
 import pygame
 import sys
 from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
-
-# Cores do menu
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 HIGHLIGHT = (70, 130, 180)
@@ -32,36 +31,28 @@ class Menu:
     def __init__(self, tela):
         self.screen = tela
         self.running = True
-
-        # Carregar fontes
         try:
             self.title_font = pygame.font.Font("fontehacker.ttf", 32)
             self.font = pygame.font.Font("fontehacker.ttf", 26)
         except pygame.error:
             self.title_font = pygame.font.SysFont('consolas', 32)
             self.font = pygame.font.SysFont('consolas', 26)
-
-        # Carregar background
         try:
             self.background = pygame.image.load("F.png").convert()
             self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
         except pygame.error:
             self.background = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.background.fill(BLACK)
-
-        # Título
         self.title_surface = self.title_font.render("DataMaze Escape", True, WHITE)
         self.title_rect = self.title_surface.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//4))
-
-        # Botões
         mid_x = SCREEN_WIDTH // 2
         start_y = SCREEN_HEIGHT // 2
         gap = 70
-
         self.buttons = [
             Button("Iniciar Jogo", (mid_x, start_y), self.font, self.start_game),
             Button("Sair", (mid_x, start_y + gap), self.font, self.exit_game),
         ]
+        self.close_button = Button("✕", (SCREEN_WIDTH - 50, 50), self.font, self.exit_game)
 
     def start_game(self):
         self.running = False
@@ -80,12 +71,13 @@ class Menu:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     for btn in self.buttons:
                         btn.check_click(mouse_pos)
-
+                    self.close_button.check_click(mouse_pos)
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    self.exit_game()
             self.screen.blit(self.background, (0, 0))
             self.screen.blit(self.title_surface, self.title_rect)
-
             for btn in self.buttons:
                 btn.draw(self.screen, mouse_pos)
-
+            self.close_button.draw(self.screen, mouse_pos)
             pygame.display.flip()
             clock.tick(FPS)

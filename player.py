@@ -1,4 +1,5 @@
 import pygame
+import os
 from utils.config import *
 
 class Jogador:
@@ -9,47 +10,59 @@ class Jogador:
         self.proxima_direcao = [0, 0]
         self.pontos = 0
         self.vidas = 3
-        
-        # Carrega a sprite sheet
-        try:
-            self.sprite_sheet = pygame.image.load("spriteplayer.png").convert_alpha()
-        except:
-            # Fallback caso o sprite não carregue
-            self.sprite_sheet = None
-            self.cor_fallback = AMARELO
-        
-        # Configurações de animação
-        self.animacoes = self.carregar_animacoes() if self.sprite_sheet else None
+        self.cor_fallback = AMARELO
+        self.animacoes = self.carregar_animacoes()
         self.frame_atual = 0
         self.contador_animacao = 0
         self.estado = "baixo"
         self.rect = pygame.Rect(self.x - LARGURA_SPRITE // 2, self.y - ALTURA_SPRITE // 2, LARGURA_SPRITE, ALTURA_SPRITE)
     
     def carregar_animacoes(self):
-        """Divide a sprite sheet em animações"""
         animacoes = {
+            "cima": [],
             "baixo": [],
             "esquerda": [],
-            "direita": [],
-            "cima": []
+            "direita": []
         }
-        
-        for linha in range(4):
-            for coluna in range(4):
-                frame = pygame.Surface((LARGURA_SPRITE, ALTURA_SPRITE), pygame.SRCALPHA)
-                frame.blit(self.sprite_sheet, (0, 0), 
-                          (coluna * LARGURA_SPRITE, linha * ALTURA_SPRITE, 
-                           LARGURA_SPRITE, ALTURA_SPRITE))
-                
-                if linha == 0: animacoes["baixo"].append(frame)
-                elif linha == 1: animacoes["esquerda"].append(frame)
-                elif linha == 2: animacoes["direita"].append(frame)
-                elif linha == 3: animacoes["cima"].append(frame)
-        
-        return animacoes
+        pasta_sprites = os.path.join(os.path.dirname(__file__), "sprites")
+        if not os.path.exists(pasta_sprites):
+            return None
+        try:
+            mapeamento = {
+                "cima": "andar_cima.png",
+                "baixo": "andar_baixo.png",
+                "esquerda": "andar_esquerda.png",
+                "direita": "andar_direita.png"
+            }
+            for direcao, arquivo in mapeamento.items():
+                caminho_sprite = os.path.join(pasta_sprites, arquivo)
+                if os.path.exists(caminho_sprite):
+                    try:
+                        sprite_sheet = pygame.image.load(caminho_sprite).convert_alpha()
+                        largura_sheet = sprite_sheet.get_width()
+                        altura_sheet = sprite_sheet.get_height()
+                        num_frames = largura_sheet // LARGURA_SPRITE
+                        for i in range(num_frames):
+                            x = i * LARGURA_SPRITE
+                            frame = sprite_sheet.subsurface(
+                                pygame.Rect(x, 0, LARGURA_SPRITE, altura_sheet)
+                            )
+                            frame = frame.copy()
+                            frame = pygame.transform.scale(frame, (LARGURA_SPRITE, ALTURA_SPRITE))
+                            animacoes[direcao].append(frame)
+                    except Exception as e:
+                        pass
+                else:
+                    pass
+            sucesso = all(len(frames) > 0 for frames in animacoes.values())
+            if sucesso:
+                return animacoes
+            else:
+                return None
+        except Exception as e:
+            return None
     
     def resetar_posicao(self):
-        """Reseta o jogador para a posição inicial"""
         self.x = 14 * TAMANHO_CELULA + TAMANHO_CELULA // 2
         self.y = 23 * TAMANHO_CELULA + TAMANHO_CELULA // 2
         self.direcao = [0, 0]
@@ -57,41 +70,35 @@ class Jogador:
         self.estado = "baixo"
     
     def atualizar(self, labirinto):
-        """Atualiza a posição e animação do jogador"""
         self.tentar_mudar_direcao(labirinto)
-        
-        # Movimento
-        novo_x = self.x + self.direcao[0] * self.velocidade
-        novo_y = self.y + self.direcao[1] * self.velocidade
-        
-        # Colisão com paredes
-        celula_x = int(novo_x // TAMANHO_CELULA)
-        celula_y = int(novo_y // TAMANHO_CELULA)
-        
-        if not labirinto.eh_parede(celula_x, celula_y):
-            self.x = novo_x
-            self.y = novo_y
-        else:
-            # Alinhamento com a grade
-            if self.direcao[0] != 0:
-                self.y = (self.y // TAMANHO_CELULA) * TAMANHO_CELULA + TAMANHO_CELULA // 2
+        if any(self.direcao):
+            novo_x = self.x + self.direcao[0] * self.velocidade
+            novo_y = self.y + self.direcao[1] * self.velocidade
+            if self.pode_se_mover(novo_x, novo_y, labirinto):
+                self.x = novo_x
+                self.y = novo_y
             else:
-                self.x = (self.x // TAMANHO_CELULA) * TAMANHO_CELULA + TAMANHO_CELULA // 2
-        
-        # Túneis
+                self.resetar_posicao()
         if self.x < 0:
-            self.x = labirinto.largura * TAMANHO_CELULA
-        elif self.x > labirinto.largura * TAMANHO_CELULA:
             self.x = 0
-        
-        # Atualizar animação
+            self.resetar_posicao()
+        elif self.x > labirinto.largura * TAMANHO_CELULA:
+            self.x = labirinto.largura * TAMANHO_CELULA
+            self.resetar_posicao()
+        if self.y < 0:
+            self.y = 0
+            self.resetar_posicao()
+        elif self.y > labirinto.altura * TAMANHO_CELULA:
+            self.y = labirinto.altura * TAMANHO_CELULA
+            self.resetar_posicao()
         if any(self.direcao):
             self.contador_animacao += 1
             if self.contador_animacao >= VELOCIDADE_ANIMACAO:
                 self.contador_animacao = 0
-                self.frame_atual = (self.frame_atual + 1) % 4
-        
-        # Determinar direção para animação
+                if self.animacoes and self.estado in self.animacoes:
+                    self.frame_atual = (self.frame_atual + 1) % len(self.animacoes[self.estado])
+        else:
+            self.frame_atual = 0
         if self.direcao[1] > 0:
             self.estado = "baixo"
         elif self.direcao[1] < 0:
@@ -100,42 +107,61 @@ class Jogador:
             self.estado = "direita"
         elif self.direcao[0] < 0:
             self.estado = "esquerda"
-
-        # Atualizar o rect para detecção de colisão
         self.rect.center = (self.x, self.y)
     
+    def pode_se_mover(self, novo_x, novo_y, labirinto):
+        raio = TAMANHO_JOGADOR // 2 - 3
+        pontos_verificacao = [
+            (novo_x, novo_y),
+            (novo_x - raio, novo_y),
+            (novo_x + raio, novo_y),
+            (novo_x, novo_y - raio),
+            (novo_x, novo_y + raio),
+            (novo_x - raio, novo_y - raio),
+            (novo_x + raio, novo_y - raio),
+            (novo_x - raio, novo_y + raio),
+            (novo_x + raio, novo_y + raio),
+        ]
+        for px, py in pontos_verificacao:
+            celula_x = int(px // TAMANHO_CELULA)
+            celula_y = int(py // TAMANHO_CELULA)
+            if labirinto.eh_parede(celula_x, celula_y):
+                return False
+        return True
+    
     def tentar_mudar_direcao(self, labirinto):
-        """Tenta mudar para a próxima direção solicitada"""
         if self.proxima_direcao != [0, 0]:
-            celula_x = int(self.x // TAMANHO_CELULA)
-            celula_y = int(self.y // TAMANHO_CELULA)
-            
-            # Verifica alinhamento com a grade
-            alinhado_x = abs(self.x - (celula_x * TAMANHO_CELULA + TAMANHO_CELULA // 2)) < 5
-            alinhado_y = abs(self.y - (celula_y * TAMANHO_CELULA + TAMANHO_CELULA // 2)) < 5
-            
-            if alinhado_x and alinhado_y:
-                nova_celula_x = celula_x + self.proxima_direcao[0]
-                nova_celula_y = celula_y + self.proxima_direcao[1]
-                
-                if not labirinto.eh_parede(nova_celula_x, nova_celula_y):
+            if self.proxima_direcao != self.direcao:
+                teste_x = self.x + self.proxima_direcao[0] * self.velocidade
+                teste_y = self.y + self.proxima_direcao[1] * self.velocidade
+                if self.pode_se_mover(teste_x, teste_y, labirinto):
                     self.direcao = self.proxima_direcao.copy()
                     self.proxima_direcao = [0, 0]
     
     def desenhar(self, tela):
-        """Desenha o jogador com animação"""
-        if self.animacoes:
-            frame = self.animacoes[self.estado][self.frame_atual]
-            tela.blit(frame, (self.x - LARGURA_SPRITE // 2, self.y - ALTURA_SPRITE // 2))
-        else:
-            # Fallback visual caso o sprite não carregue
-            pygame.draw.circle(tela, self.cor_fallback, (int(self.x), int(self.y)), TAMANHO_JOGADOR // 2)
-            
-            # Olhos indicando direção
-            olho_x, olho_y = 0, 0
-            if self.direcao[0] > 0: olho_x = 5
-            elif self.direcao[0] < 0: olho_x = -5
-            elif self.direcao[1] > 0: olho_y = 5
-            elif self.direcao[1] < 0: olho_y = -5
-            
-            pygame.draw.circle(tela, PRETO, (int(self.x + olho_x), int(self.y + olho_y)), TAMANHO_JOGADOR // 4)
+        try:
+            if self.animacoes and self.estado in self.animacoes:
+                if len(self.animacoes[self.estado]) > 0:
+                    frame = self.animacoes[self.estado][self.frame_atual]
+                    pos_x = int(self.x - LARGURA_SPRITE // 2)
+                    pos_y = int(self.y - ALTURA_SPRITE // 2)
+                    tela.blit(frame, (pos_x, pos_y))
+                else:
+                    self.desenhar_fallback(tela)
+            else:
+                self.desenhar_fallback(tela)
+        except Exception as e:
+            self.desenhar_fallback(tela)
+    
+    def desenhar_fallback(self, tela):
+        pygame.draw.circle(tela, self.cor_fallback, (int(self.x), int(self.y)), TAMANHO_JOGADOR // 2)
+        olho_x, olho_y = 0, 0
+        if self.direcao[0] > 0:
+            olho_x = 5
+        elif self.direcao[0] < 0:
+            olho_x = -5
+        elif self.direcao[1] > 0:
+            olho_y = 5
+        elif self.direcao[1] < 0:
+            olho_y = -5
+        pygame.draw.circle(tela, PRETO, (int(self.x + olho_x), int(self.y + olho_y)), TAMANHO_JOGADOR // 4)
