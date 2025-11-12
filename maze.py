@@ -45,8 +45,9 @@ class Labirinto:
         
         grade = np.zeros((self.altura, self.largura), dtype=int)
         for y in range(self.altura):
+            linha = labirinto[y].ljust(self.largura)
             for x in range(self.largura):
-                char = labirinto[y][x]
+                char = linha[x]
                 if char == '#':
                     grade[y][x] = 1 #parede
                 elif char == '.':
