@@ -6,6 +6,7 @@ class Jogador:
     def __init__(self):
         self.resetar_posicao()
         self.velocidade = VELOCIDADE_JOGADOR
+        self.raio = TAMANHO_JOGADOR // 2
         self.direcao = [0, 0]
         self.proxima_direcao = [0, 0]
         self.pontos = 0
@@ -16,6 +17,8 @@ class Jogador:
         self.contador_animacao = 0
         self.estado = "baixo"
         self.rect = pygame.Rect(self.x - LARGURA_SPRITE // 2, self.y - ALTURA_SPRITE // 2, LARGURA_SPRITE, ALTURA_SPRITE)
+        self.velocidade_boost_ativo = False
+        self.tempo_velocidade_boost = 0
     
     def carregar_animacoes(self):
         animacoes = {
@@ -27,6 +30,38 @@ class Jogador:
         pasta_sprites = os.path.join(os.path.dirname(__file__), "sprites")
         if not os.path.exists(pasta_sprites):
             return None
+        # Suporte a sprites por direção (jogador_cima.png, jogador_esq.png, etc.)
+        mapeamento_direcoes = {
+            "cima": "jogador_cima.png",
+            "baixo": "jogador_baixo.png",
+            "esquerda": "jogador_esq.png",
+            "direita": "jogador_dir.png"
+        }
+        carregou_algum = False
+        for direcao, arquivo in mapeamento_direcoes.items():
+            caminho = os.path.join(pasta_sprites, arquivo)
+            if os.path.exists(caminho):
+                try:
+                    img = pygame.image.load(caminho).convert_alpha()
+                    img = pygame.transform.scale(img, (LARGURA_SPRITE, ALTURA_SPRITE))
+                    animacoes[direcao].append(img)
+                    carregou_algum = True
+                except Exception:
+                    pass
+        if carregou_algum:
+            return animacoes
+        # Fallback: tenta jogador.png como sprite genérico
+        jogador_path = os.path.join(pasta_sprites, "jogador.png")
+        if os.path.exists(jogador_path):
+            try:
+                img = pygame.image.load(jogador_path).convert_alpha()
+                img = pygame.transform.scale(img, (LARGURA_SPRITE, ALTURA_SPRITE))
+                for direcao in animacoes.keys():
+                    animacoes[direcao].append(img)
+                return animacoes
+            except Exception:
+                pass
+        # Caso não exista, tenta carregar sprite-sheets por direção (comportamento antigo)
         try:
             mapeamento = {
                 "cima": "andar_cima.png",
@@ -41,7 +76,7 @@ class Jogador:
                         sprite_sheet = pygame.image.load(caminho_sprite).convert_alpha()
                         largura_sheet = sprite_sheet.get_width()
                         altura_sheet = sprite_sheet.get_height()
-                        num_frames = largura_sheet // LARGURA_SPRITE
+                        num_frames = max(1, largura_sheet // LARGURA_SPRITE)
                         for i in range(num_frames):
                             x = i * LARGURA_SPRITE
                             frame = sprite_sheet.subsurface(
@@ -50,26 +85,34 @@ class Jogador:
                             frame = frame.copy()
                             frame = pygame.transform.scale(frame, (LARGURA_SPRITE, ALTURA_SPRITE))
                             animacoes[direcao].append(frame)
-                    except Exception as e:
+                    except Exception:
                         pass
-                else:
-                    pass
             sucesso = all(len(frames) > 0 for frames in animacoes.values())
             if sucesso:
                 return animacoes
             else:
                 return None
-        except Exception as e:
+        except Exception:
             return None
     
     def resetar_posicao(self):
-        self.x = 14 * TAMANHO_CELULA + TAMANHO_CELULA // 2
-        self.y = 23 * TAMANHO_CELULA + TAMANHO_CELULA // 2
+        self.x = 5 * TAMANHO_CELULA + TAMANHO_CELULA // 2
+        self.y = 1 * TAMANHO_CELULA + TAMANHO_CELULA // 2
         self.direcao = [0, 0]
         self.proxima_direcao = [0, 0]
         self.estado = "baixo"
+        try:
+            self.rect.center = (self.x, self.y)
+        except Exception:
+            pass
     
     def atualizar(self, labirinto):
+        if self.velocidade_boost_ativo:
+            tempo_atual = pygame.time.get_ticks()
+            if tempo_atual - self.tempo_velocidade_boost > DURACAO_VELOCIDADE_BOOST:
+                self.velocidade_boost_ativo = False
+                self.velocidade = VELOCIDADE_JOGADOR
+        
         self.tentar_mudar_direcao(labirinto)
         if any(self.direcao):
             novo_x = self.x + self.direcao[0] * self.velocidade
@@ -77,20 +120,16 @@ class Jogador:
             if self.pode_se_mover(novo_x, novo_y, labirinto):
                 self.x = novo_x
                 self.y = novo_y
-            else:
-                self.resetar_posicao()
+        
         if self.x < 0:
             self.x = 0
-            self.resetar_posicao()
         elif self.x > labirinto.largura * TAMANHO_CELULA:
             self.x = labirinto.largura * TAMANHO_CELULA
-            self.resetar_posicao()
         if self.y < 0:
             self.y = 0
-            self.resetar_posicao()
         elif self.y > labirinto.altura * TAMANHO_CELULA:
             self.y = labirinto.altura * TAMANHO_CELULA
-            self.resetar_posicao()
+        
         if any(self.direcao):
             self.contador_animacao += 1
             if self.contador_animacao >= VELOCIDADE_ANIMACAO:
@@ -110,58 +149,57 @@ class Jogador:
         self.rect.center = (self.x, self.y)
     
     def pode_se_mover(self, novo_x, novo_y, labirinto):
-        raio = TAMANHO_JOGADOR // 2 - 3
-        pontos_verificacao = [
-            (novo_x, novo_y),
-            (novo_x - raio, novo_y),
-            (novo_x + raio, novo_y),
-            (novo_x, novo_y - raio),
-            (novo_x, novo_y + raio),
-            (novo_x - raio, novo_y - raio),
-            (novo_x + raio, novo_y - raio),
-            (novo_x - raio, novo_y + raio),
-            (novo_x + raio, novo_y + raio),
-        ]
-        for px, py in pontos_verificacao:
-            celula_x = int(px // TAMANHO_CELULA)
-            celula_y = int(py // TAMANHO_CELULA)
-            if labirinto.eh_parede(celula_x, celula_y):
-                return False
-        return True
+        celula_x = int(novo_x // TAMANHO_CELULA)
+        celula_y = int(novo_y // TAMANHO_CELULA)
+        return not labirinto.eh_parede(celula_x, celula_y)
     
     def tentar_mudar_direcao(self, labirinto):
         if self.proxima_direcao != [0, 0]:
-            if self.proxima_direcao != self.direcao:
-                teste_x = self.x + self.proxima_direcao[0] * self.velocidade
-                teste_y = self.y + self.proxima_direcao[1] * self.velocidade
-                if self.pode_se_mover(teste_x, teste_y, labirinto):
-                    self.direcao = self.proxima_direcao.copy()
-                    self.proxima_direcao = [0, 0]
+            teste_x = self.x + self.proxima_direcao[0] * self.velocidade
+            teste_y = self.y + self.proxima_direcao[1] * self.velocidade
+            if self.pode_se_mover(teste_x, teste_y, labirinto):
+                self.direcao = self.proxima_direcao.copy()
     
-    def desenhar(self, tela):
+    def ativar_vida_extra(self):
+        self.vidas += 1
+    
+    def ativar_velocidade_boost(self):
+        if not self.velocidade_boost_ativo:
+            self.velocidade_boost_ativo = True
+            self.velocidade = VELOCIDADE_JOGADOR * 2
+            self.tempo_velocidade_boost = pygame.time.get_ticks()
+    
+    def desenhar(self, tela, scale=1.0, offset=(0,0)):
+        ox, oy = offset
         try:
-            if self.animacoes and self.estado in self.animacoes:
-                if len(self.animacoes[self.estado]) > 0:
-                    frame = self.animacoes[self.estado][self.frame_atual]
-                    pos_x = int(self.x - LARGURA_SPRITE // 2)
-                    pos_y = int(self.y - ALTURA_SPRITE // 2)
-                    tela.blit(frame, (pos_x, pos_y))
-                else:
-                    self.desenhar_fallback(tela)
+            if self.animacoes and self.estado in self.animacoes and len(self.animacoes[self.estado]) > 0:
+                frame = self.animacoes[self.estado][self.frame_atual]
+                sw = int(LARGURA_SPRITE * scale)
+                sh = int(ALTURA_SPRITE * scale)
+                frame_scaled = pygame.transform.scale(frame, (sw, sh))
+                pos_x = ox + int(self.x * scale - sw // 2)
+                pos_y = oy + int(self.y * scale - sh // 2)
+                tela.blit(frame_scaled, (pos_x, pos_y))
             else:
-                self.desenhar_fallback(tela)
-        except Exception as e:
-            self.desenhar_fallback(tela)
+                self.desenhar_fallback(tela, scale, offset)
+        except Exception:
+            self.desenhar_fallback(tela, scale, offset)
     
-    def desenhar_fallback(self, tela):
-        pygame.draw.circle(tela, self.cor_fallback, (int(self.x), int(self.y)), TAMANHO_JOGADOR // 2)
+    def desenhar_fallback(self, tela, scale=1.0, offset=(0,0)):
+        ox, oy = offset
+        raio = max(3, int((TAMANHO_JOGADOR // 2 + 2) * scale))
+        centro = (ox + int(self.x * scale), oy + int(self.y * scale))
+        pygame.draw.circle(tela, self.cor_fallback, centro, raio)
+        pygame.draw.circle(tela, (255, 255, 100), centro, raio, max(2, int(2 * scale)))
         olho_x, olho_y = 0, 0
+        olho_offset = max(1, int(5 * scale))
         if self.direcao[0] > 0:
-            olho_x = 5
+            olho_x = olho_offset
         elif self.direcao[0] < 0:
-            olho_x = -5
+            olho_x = -olho_offset
         elif self.direcao[1] > 0:
-            olho_y = 5
+            olho_y = olho_offset
         elif self.direcao[1] < 0:
-            olho_y = -5
-        pygame.draw.circle(tela, PRETO, (int(self.x + olho_x), int(self.y + olho_y)), TAMANHO_JOGADOR // 4)
+            olho_y = -olho_offset
+        olho_raio = max(2, int((TAMANHO_JOGADOR // 4 + 1) * scale))
+        pygame.draw.circle(tela, PRETO, (centro[0] + olho_x, centro[1] + olho_y), olho_raio)

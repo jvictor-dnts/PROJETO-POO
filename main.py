@@ -7,8 +7,10 @@ def main():
     pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
     pygame.mixer.init()
+    
+   
     tela = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("DataMaze Escape")
+    pygame.display.set_caption("DataMaze Escape - Widescreen")
     try:
         icon = pygame.image.load("F.png")
         pygame.display.set_icon(icon)
